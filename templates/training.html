@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <link rel="stylesheet" href="static/styles/training.css">
+    <link rel="stylesheet" href="static/styles/menu.css">
+    <title>File upload demo</title>
+</head>
+<body>
+    <div class="menu">
+        <div class="container">
+            <div class="menu__inner">
+                <div class="logo">
+                </div>
+                <ul class="nav">
+                    <li><a href="http://localhost:7001/home">Home</a></li>
+                    <li><a href="http://localhost:7001/home/recognition">К распознаванию</a></li>
+                    <li><a href="http://localhost:7001/home/training">К обучению</a></li>
+                    <li><a href="http://localhost:7001/home/about">About</a></li>
+                    <li><a href="http://localhost:7001/home/logOut">Выход</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <input type="file" id="image_file_input" name="file" accept="image/jpeg,image/png">
+    <div class="image_container_for_training">
+        <img id="image_frame_for_training" src="">
+    </div>
+    <button class="button" id="submit_id" onclick="handle_train_button_click()">Submit</button>
+    <input type="text" autofocus placeholder="имя человека" required autocomplete="off" id="person_name">
+<script type="text/javascript">
+    const imageFileInput = document.getElementById('image_file_input');
+    const imageFrame = document.getElementById('image_frame_for_training');
+    const submitButton = document.getElementById('submit_id');
+    const max_img_width = 1024;
+    const max_img_height = 1024;
+
+    imageFileInput.addEventListener('change', (event) => {
+        const file = event.target.files[0];
+
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+
+        reader.onload = () => {
+            const image = new Image();
+            image.src = reader.result;
+            image.onload = () => {
+                if (image.height > max_img_height || image.width > max_img_width) {
+                    imageFileInput.value = null;
+                    imageFrame.src = null;
+                    //Разблокируем кнопку отправки
+                    submitButton.disabled = false;
+                    alert("Ошибка! Размер изображения не должен превышать 1024 на 1024 пикселя!");
+                    return;
+                }
+                imageFrame.src = reader.result;
+                //Разблокируем кнопку отправки
+                submitButton.disabled = false;
+            };
+        };
+    });
+
+    function handle_train_button_click(){
+        let url = "http://localhost:7001/home/training/train"
+
+        //Валидация!
+        const imageFile = document.getElementById('image_file_input').files[0];
+        if (imageFile == null) {
+            alert("Ошибка! Изображение не выбрано!")
+            return
+        } else if (submitButton.disabled) {
+            alert("Ошибка! Выберите другое изображение для расознавания!");
+            return;
+        } else {
+            //Если изображение уже было отправлено
+            submitButton.disabled = true;
+        }
+        const person_name_input = document.getElementById('person_name')
+        if (person_name_input.value) {
+            if ((person_name_input.value.replace(/\s+/g, '').length) == 0) {
+                alert("Ошибка! Имя должно состоять не только из символов пробела!")
+                return
+            }
+        } else {
+            alert("Ошибка! Введите имя!")
+            return
+        }
+
+        const formData = new FormData();
+        formData.append('image', imageFile);
+        formData.append("person_name", person_name_input.value)
+
+        fetch(url, {
+            method: 'POST',
+            body: formData
+        }).then(response => response.json())
+            .then (data => {
+            if (data.Code != undefined) {
+                alert(`Ошибка! ${data.message}`);
+            } else {
+                alert("Ок! Изображение успешно загружено в систему. Теперь вы можете распознавать похожие фото!");
+            }
+        });
+    }
+</script>
+</body>
+</html>

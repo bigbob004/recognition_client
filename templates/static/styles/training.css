@@ -1,0 +1,13 @@
+.image_container_for_training{
+    border: 1px solid black; /* Задаем рамку с черным цветом и толщиной 1px */
+    position: absolute;
+    top: 30%;
+    left: 35%;
+    width:600px;
+    height: 400px;
+}
+img{
+    width: 100%; /* Ширина изображений */
+    height: 100%;
+    object-fit: contain;
+}

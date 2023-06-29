@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <!--Use the `title` variable to set the title of the page-->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <link rel="stylesheet" href="static/styles/recognition.css">
+    <link rel="stylesheet" href="static/styles/menu.css">
+</head>
+
+<body>
+
+<div class="menu">
+    <div class="container">
+        <div class="menu__inner">
+            <div class="logo">
+                <i class="fa fa-eye" style="font-size:100px"></i>
+            </div>
+            <ul class="nav">
+                <li><a href="http://localhost:7001/home">Home</a></li>
+                <li><a href="http://localhost:7001/home/recognition">К распознаванию</a></li>
+                <li><a href="http://localhost:7001/home/training">К обучению</a></li>
+                <li><a href="http://localhost:7001/home/about">About</a></li>
+                <li><a href="http://localhost:7001/home/logOut">Выход</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<input type="file" id="image_file_input" name="file" accept="image/jpeg,image/png">
+<div class="image_container_for_recognition">
+    <img id="image_frame_for_recognition" src="">
+</div>
+<div class="image_container_for_recognized">
+    <canvas id="canva_to_draw_recognized"></canvas>
+</div>
+<button class="button" id="submit_id" type="button" onclick="handle_recognize_button_click()">Submit</button>
+<p><i class="arrow_right"></i></p>
+<div id="person_name">Здесь появится имя человека на фото</div>
+<script type="text/javascript">
+    const imageFileInput = document.getElementById('image_file_input');
+    const imageFrame = document.getElementById('image_frame_for_recognition');
+    const canvas = document.getElementById('canva_to_draw_recognized');
+    const submitButton = document.getElementById('submit_id');
+    let personName = document.getElementById('person_name');
+    let ctx = canvas.getContext('2d');
+
+    const max_img_width = 1024;
+    const max_img_height = 1024;
+
+    imageFileInput.addEventListener('change', (event) => {
+        const file = event.target.files[0];
+
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+
+        reader.onload = () => {
+
+            const image = new Image();
+            image.src = reader.result;
+            image.onload = () => {
+                if (image.height > max_img_height || image.width > max_img_width) {
+                    imageFileInput.value = null;
+                    imageFrame.src = null;
+                    //Разблокируем кнопку отправки
+                    submitButton.disabled = false;
+                    alert("Ошибка! Размер изображения не должен превышать 1024 на 1024 пикселя!");
+                    return;
+                }
+                imageFrame.src = reader.result;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                personName.innerHTML = 'Здесь появится имя человека на фото';
+                //Разблокируем кнопку отправки
+                submitButton.disabled = false;
+            };
+
+        };
+    });
+
+    const httpStatusOK = 200
+    async function handle_recognize_button_click() {
+        let url = "http://localhost:7001/home/recognition/recognize_face";
+
+        const imageFile = document.getElementById('image_file_input').files[0];
+        if (imageFile == null) {
+            alert("Ошибка! Изображение не выбрано!");
+            return;
+        } else if (submitButton.disabled) {
+            alert("Ошибка! Выберите другое изображение для расознавания!");
+            return;
+        } else {
+            //Если изображение уже было отправлено
+            submitButton.disabled = true;
+        }
+        const personNameFrame = document.getElementById('person_name')
+        const formData = new FormData();
+        formData.append('image', imageFile);
+
+        let resp = await fetch(url, {
+            method: 'POST',
+            body: formData
+        });
+        let data = await resp.json();
+        if (resp.status == httpStatusOK) {
+            // создаем новый объект FileReader
+            var reader = new FileReader();
+
+            // настраиваем чтение файла как data URL
+            reader.readAsDataURL(imageFile);
+
+            // ждем, пока файл будет прочитан
+            reader.onload = function () {
+                // создаем новый объект изображения
+                var img = new Image();
+
+                // устанавливаем источник изображения как data URL
+                img.src = reader.result;
+
+                // ждем, пока изображение загрузится
+                img.onload = function () {
+                    // получаем элемент canvas
+                    var canvas = document.getElementById('canva_to_draw_recognized');
+
+                    // устанавливаем размеры холста, чтобы они соответствовали размерам изображения
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+
+                    // получаем контекст 2D для холста
+                    var ctx = canvas.getContext('2d');
+
+                    // рисуем изображение на холсте
+                    ctx.drawImage(img, 0, 0);
+
+                    // рисуем ограничительную рамку
+                    ctx.beginPath();
+                    ctx.lineWidth = '4';
+                    ctx.strokeStyle = 'yellow';
+                    personNameFrame.innerHTML = data.PersonName;
+                    var faceLocation = data.FaceLocation;
+                    ctx.rect(faceLocation.Left, faceLocation.Top, faceLocation.Right - faceLocation.Left, faceLocation.Bottom - faceLocation.Top); // замените на свои координаты
+                    ctx.stroke();
+                }
+            };
+        } else {
+            alert(`Ошибка! ${data.message}`);
+        }
+    }
+</script>
+</body>
+</html>

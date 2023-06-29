@@ -1,0 +1,39 @@
+.arrow_right {
+    border: solid black;
+    border-width: 0 3px 3px 0;
+    display: inline-block;
+    padding: 50px;
+    transform: rotate(-45deg);
+    -webkit-transform: rotate(-45deg);
+    position: absolute;
+    top: 40%;
+    left: 45%;
+}
+.image_container_for_recognition{
+    border: 1px solid black; /* Задаем рамку с черным цветом и толщиной 1px */
+    position: absolute;
+    top: 30%;
+    left: 20%;
+    width:400px;
+    height: 300px;
+}
+.image_container_for_recognized{
+    border: 1px solid black; /* Задаем рамку с черным цветом и толщиной 1px */
+    position: absolute;
+    top: 30%;
+    right: 20%;
+    width:400px;
+    height: 300px;
+}
+img, canvas{
+    width: 100%; /* Ширина изображений */
+    height: 100%;
+    object-fit: contain;
+}
+#person_name {
+    position: absolute;
+    top: 70%;
+    right: 42.5%;
+    border: 2px solid black;
+    padding: 10px;
+}
